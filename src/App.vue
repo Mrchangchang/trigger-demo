@@ -1,17 +1,23 @@
+<!--
+ * @Author: Mr Chang
+ * @Date: 2019-11-22 15:45:54
+ * @LastEditors: Mr Chang
+ * @Description: file content
+ -->
 <template>
   <div id="app">
     <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <Trigger msg="Welcome to Your Vue.js App"/>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import Trigger from './components/Trigger.vue'
 
 export default {
   name: 'app',
   components: {
-    HelloWorld
+    Trigger
   }
 }
 </script>
