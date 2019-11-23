@@ -1,6 +1,3 @@
-<template>
-  <div></div>
-</template>
 <script>
 import { alignElement, alignPoint } from 'dom-align'
 import { isWindow, buffer, isSamePoint, isSimilarValue, restoreFocus } from './util';
@@ -160,6 +157,7 @@ export default {
     }
     const { childrenProps } = this.$props
     const child = getSlot(this)[0]
+    console.log(child)
     if (childrenProps && child) {
       return cloneElement(child, childrenProps)
     } else {

@@ -6,18 +6,20 @@
  -->
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <Trigger msg="Welcome to Your Vue.js App"/>
+    <point/>
+    <simple/>
   </div>
 </template>
 
 <script>
-import Trigger from './components/Trigger.vue'
+import point from './demo/point'
+import simple from './demo/simple'
 
 export default {
   name: 'app',
   components: {
-    Trigger
+    point,
+    simple
   }
 }
 </script>
