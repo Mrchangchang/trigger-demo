@@ -1,11 +1,12 @@
 <!--
  * @Author: Mr Chang
  * @Date: 2019-11-22 15:45:54
- * @LastEditors: Mr Chang
+ * @LastEditors: Please set LastEditors
  * @Description: file content
  -->
 <script>
 import {hasProp} from './props-util'
+import addDOMEventListener from 'add-dom-event-listener'
 
 function returnEmptyString() {
   return '';
@@ -144,6 +145,20 @@ export default {
           this.afterPopupVisibleChange(val)
         })
       })
+    }
+  },
+  methods: {
+    updatedCal () {
+      const props = this.$props
+      const state = this.$data
+
+      if (state.sPopupVisible) {
+        let currentDocument
+        if ( !this.clickOutsideHander && (this.isClickToHide() || this.isContextmenuToShow())) {
+          currentDocument = props.getDocument()
+          this.clickOutsideHander = lis
+        }
+      }
     }
   }
 }
