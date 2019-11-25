@@ -73,3 +73,30 @@ export function isSimilarValue (val1, val2) {
   const int2 = Math.floor(val2)
   return Math.abs(int1 -int2) < 1
 }
+
+function isPointsEq(a1, a2, isAlignPoint) {
+  if (isAlignPoint) {
+    return a1[0] === a2[0];
+  }
+  return a1[0] === a2[0] && a1[1] === a2[1];
+}
+
+export function getAlignPopupClassName(builtinPlacements, prefixCls, align, isAlignPoint) {
+  const points = align.points;
+  for (const placement in builtinPlacements) {
+    if (builtinPlacements.hasOwnProperty(placement)) {
+      if (isPointsEq(builtinPlacements[placement].points, points, isAlignPoint)) {
+        return `${prefixCls}-placement-${placement}`;
+      }
+    }
+  }
+  return '';
+}
+
+export function getAlignFromPlacement(builtinPlacements, placementStr, align) {
+  const baseAlign = builtinPlacements[placementStr] || {};
+  return {
+    ...baseAlign,
+    ...align,
+  };
+}

@@ -6,7 +6,7 @@
  -->
 <script>
 import {hasProp} from './props-util'
-import {contains} from './util'
+import {contains, getAlignPopupClassName, getAlignFromPlacement} from './util'
 import addDOMEventListener from 'add-dom-event-listener'
 
 function returnEmptyString() {
@@ -309,6 +309,119 @@ export default {
 
       if (vcTriggerContext.onPopupMouseDown) {
         vcTriggerContext.onPopupMouseDown(...args);
+      }
+    },
+
+    onDocumentClick (event) {
+      if (this.$props.mask &&!this.$props.maskClosable) {
+        return
+      }
+      const target = event.target
+      const root = this.$el
+      if (!contains(root, target) && !this.hasPopupMouseDown) {
+        this.close()
+      }
+    },
+
+    getPopupDomNode () {
+      if (this._component && this._component.getPopupDomNode) {
+        return this._component.getPopupDomNode()
+      }
+      return null
+    },
+
+    getRootDomNode () {
+      return this.$el
+    },
+
+    handleGetPopupClassFromAlign (align) {
+      const className = []
+      const props = this.$props
+      const {
+        popupPlacement,
+        builtinPlacements,
+        prefixCls,
+        alignPoint,
+        getPopupClassNameFromAlign
+      } = props
+      if (popupPlacement && builtinPlacements) {
+        className.push(getAlignPopupClassName(builtinPlacements, prefixCls, align, alignPoint))
+      }
+      if (getPopupClassNameFromAlign) {
+        className.push(getAlignPopupClassName(align))
+      }
+      return className.join(' ')
+    },
+
+    getPopupAlign () {
+      const props = this.$props
+      const {popupPlacement, popupAlign, builtinPlacements} = props
+      if (popupPlacement && builtinPlacements) {
+        return getAlignFromPlacement(builtinPlacements, popupPlacement, popupAlign)
+      }
+      return popupAlign
+    },
+    savePopup (node) {
+      this._component = node
+      this.savePopupRef(node)
+    },
+    getComponent () {
+      const self = this
+      const mouseProps = {}
+      if (this.isMouseEnterToShow()) {
+        mouseProps.mounseenter = self.onPopupMounseenter
+      }
+      if (this.isMouseLeaveToHide()) {
+        mouseProps.mouseleave = self.onPopupMouseleave
+      }
+      mouseProps.mousedown = self.onPopupMouseDown
+      mouseProps.tousestart = self.onPopupMouseDown
+      const { handleGetPopupClassFromAlign, getRootDomNode, getContainer, $listeners} = this
+      const {
+        prefixCls,
+        destroyPopupOnHide,
+        popupClassName,
+        action,
+        popupAnimation,
+        popupTransitionName,
+        popupStyle,
+        mask,
+        maskAnimation,
+        maskTransitionName,
+        zIndex,
+        stretch,
+        alignPoint
+      } = self.$props
+      const {sPopupVisible, point} = self.$data
+      const popupProps = {
+        props: {
+          prefixCls,
+          destroyPopupOnHide,
+          visible: sPopupVisible,
+          point: alignPoint && point,
+          animation: popupAnimation,
+          getClassNameFromAlign: handleGetPopupClassFromAlign,
+          stretch,
+          getRootDomNode,
+          mask,
+          zIndex,
+          transitionName: popupTransitionName,
+          maskAnimation,
+          maskTransitionName,
+          getContainer,
+          popupClassName,
+          popupStyle
+        },
+        on: {
+          align: $listeners.popupAlign || noop,
+          ...mouseProps
+        },
+        directives: [
+          {
+            name: 'v-ref',
+            value: this.savePopup
+          }
+        ]
       }
     }
   }
