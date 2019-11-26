@@ -1,7 +1,7 @@
 <!--
  * @Author: Mr Chang
  * @Date: 2019-11-22 15:45:54
- * @LastEditors: Mr Chang
+ * @LastEditors: Please set LastEditors
  * @Description: file content
  -->
 <script>
@@ -11,6 +11,9 @@ import {hasProp, filterEmpty, getEvents} from './props-util'
 import {contains, getAlignPopupClassName, getAlignFromPlacement, getComponentFromProp, requestAnimationTimeout, cancelAnimationTimeout} from './util'
 import addDOMEventListener from 'add-dom-event-listener'
 import {cloneElement} from './vnode'
+
+
+
 
 function returnEmptyString() {
   return '';
@@ -51,6 +54,10 @@ export default {
     getPopupClassNameFromAlign: {
       type: null,
       default: () => returnEmptyString
+    },
+    afterPopupVisibleChange: {
+      type: Function,
+      default: () => noop
     },
     popup: null,
     popupStyle: {
@@ -463,7 +470,7 @@ export default {
         },
         directives: [
           {
-            name: 'v-ref',
+            name: 'segi-ref',
             value: this.savePopup
           }
         ]

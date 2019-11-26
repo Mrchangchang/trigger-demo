@@ -1,12 +1,13 @@
 <!--
  * @Author: Mr Chang
  * @Date: 2019-11-23 11:12:23
- * @LastEditors: Mr Chang
+ * @LastEditors: Please set LastEditors
  * @Description: file content
  -->
 <script>
 import PopupInner from './PopupInner'
 import LazyRenderBox from './LazyRenderBox'
+import Align from './Align'
 
 export default {
   props: {
@@ -44,7 +45,7 @@ export default {
       type: String
     },
     mask: {
-      type: String
+      type: Boolean
     },
     zIndex: {
       type: Number
@@ -60,14 +61,14 @@ export default {
       type: String
     },
     point: {
-      type: Object,
+      type: [Object, Boolean] ,
       validator (value) {
-        return (value && typeof value === 'object' && typeof value.pageX === 'number' && typeof value.pageY === 'number')
+        return (value && typeof value === 'object' && typeof value.pageX === 'number' && typeof value.pageY === 'number' || !value)
       }
     }
   },
   components: {
-    PopupInner, LazyRenderBox
+    PopupInner, LazyRenderBox, Align
   },
   data () {
     return {
@@ -317,6 +318,7 @@ export default {
             key="popup"
             ref="alignInstance"
             monitorWindowResize
+            align={align}
             onAlign={this.onAlign}
           >
             <PopupInner {...popupInnerProps}>{$slots.default}</PopupInner>

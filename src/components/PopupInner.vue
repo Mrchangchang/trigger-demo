@@ -1,10 +1,12 @@
 <!--
  * @Author: Mr Chang
  * @Date: 2019-11-23 15:45:22
- * @LastEditors: Mr Chang
+ * @LastEditors: Please set LastEditors
  * @Description: file content
  -->
 <script>
+import LazyRenderBox from './LazyRenderBox'
+
 export default {
   props: {
     hiddenClassName: {
