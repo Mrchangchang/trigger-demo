@@ -12,6 +12,7 @@
 </template>
 
 <script>
+import './assets/less/index.less'
 import point from './demo/point'
 import simple from './demo/simple'
 

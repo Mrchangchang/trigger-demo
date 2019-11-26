@@ -5,9 +5,12 @@
  * @Description: file content
  -->
 <script>
-import {hasProp} from './props-util'
-import {contains, getAlignPopupClassName, getAlignFromPlacement} from './util'
+import Popup from './Popup'
+import ContainerRender from './ContainerRender'
+import {hasProp, filterEmpty, getEvents} from './props-util'
+import {contains, getAlignPopupClassName, getAlignFromPlacement, getComponentFromProp, requestAnimationTimeout, cancelAnimationTimeout} from './util'
 import addDOMEventListener from 'add-dom-event-listener'
+import {cloneElement} from './vnode'
 
 function returnEmptyString() {
   return '';
@@ -28,6 +31,9 @@ const ALL_HANDLERS = [
 ]
 function noop () {}
 export default {
+  components: {
+    ContainerRender
+  },
   name: 'Trigger',
   props: {
     action: {
@@ -83,7 +89,7 @@ export default {
     getPopupContainer: Function,
     getDocument: {
       type: Function,
-      default: () => returnDocument
+      default: returnDocument
     },
     forceRender: Boolean,
     destroyPopupOnHide: {
@@ -148,7 +154,43 @@ export default {
       })
     }
   },
+  beforeCreate () {
+    ALL_HANDLERS.forEach(h => {
+      this[`fire${h}`] = e => {
+        this.fireEvent(h, e)
+      }
+    })
+  },
+  mounted () {
+    this.$nextTick(() => {
+      this.renderComponent(null)
+      this.updatedCal()
+    })
+  },
+  updated () {
+    this.$nextTick(() => {
+      this.updatedCal()
+    })
+  },
+  beforeDestroy () {
+    this.clearDelayTimer()
+    this.clearOutsideHandler()
+    clearTimeout(this.mouseDownTimeout)
+  },
   methods: {
+    __emit () {
+      // 直接调用listeners，底层组件不需要vueTool记录events
+      const args = [].slice.call(arguments, 0);
+      const filterEvent = [];
+      const eventName = args[0];
+      if (args.length && this.$listeners[eventName]) {
+        if (filterEvent.includes(eventName)) {
+          this.$emit(eventName, ...args.slice(1));
+        } else {
+          this.$listeners[eventName](...args.slice(1));
+        }
+      }
+    },
     updatedCal () {
       const props = this.$props
       const state = this.$data
@@ -190,7 +232,7 @@ export default {
           )
         }
       } else {
-        this.clearOutsideHander()
+        this.clearOutsideHandler()
       }
     },
 
@@ -348,7 +390,7 @@ export default {
         className.push(getAlignPopupClassName(builtinPlacements, prefixCls, align, alignPoint))
       }
       if (getPopupClassNameFromAlign) {
-        className.push(getAlignPopupClassName(align))
+        className.push(getPopupClassNameFromAlign(align))
       }
       return className.join(' ')
     },
@@ -375,7 +417,7 @@ export default {
         mouseProps.mouseleave = self.onPopupMouseleave
       }
       mouseProps.mousedown = self.onPopupMouseDown
-      mouseProps.tousestart = self.onPopupMouseDown
+      mouseProps.touchstart = self.onPopupMouseDown
       const { handleGetPopupClassFromAlign, getRootDomNode, getContainer, $listeners} = this
       const {
         prefixCls,
@@ -393,12 +435,15 @@ export default {
         alignPoint
       } = self.$props
       const {sPopupVisible, point} = self.$data
+      const align = this.getPopupAlign()
       const popupProps = {
         props: {
           prefixCls,
           destroyPopupOnHide,
           visible: sPopupVisible,
           point: alignPoint && point,
+          action,
+          align,
           animation: popupAnimation,
           getClassNameFromAlign: handleGetPopupClassFromAlign,
           stretch,
@@ -423,7 +468,220 @@ export default {
           }
         ]
       }
+      return <Popup {...popupProps}>{getComponentFromProp(self, 'popup')}</Popup>
+    },
+
+    getContainer () {
+      const {$props: props} = this
+      const popupContainer = document.createElement('div')
+      // 确保默认弹出容器永远不会导致滚动条出现
+      popupContainer.style.position = 'absolute'
+      popupContainer.style.top = '0'
+      popupContainer.style.left = '0'
+      popupContainer.style.width = '100%'
+      const mountNode = props.getPopupContainer 
+        ? props.getPopupContainer(this.$el) : props.getDocument().body
+      mountNode.appendChild(popupContainer)
+      this.popupContainer = popupContainer
+      return popupContainer
+    },
+
+    setPopupVisible (sPopupVisible, event) {
+      const { alignPoint } = this.$props
+      this.clearDelayTimer()
+      if ( this.$data.setPopupVisible !== sPopupVisible) {
+        if (!hasProp(this, 'popupVisible')) {
+          this.sPopupVisible = sPopupVisible
+        }
+        this.$listeners.popupVisibleChange && this.$listeners.popupVisibleChange(sPopupVisible)
+      }
+      // 始终记录点位置，因为mouseEnterDelay将延迟显示
+      if (sPopupVisible && alignPoint && event) {
+        this.setPoint(event)
+      }
+    },
+
+    setPoint (point) {
+      const {alignPoint} = this.$props
+      if (!alignPoint || !point) return
+
+      this.point = {
+        pageX: point.pageX,
+        pageY: point.pageY
+      }
+    },
+
+    delaySetPopupVisible (visible, delayS, event) {
+      const delay = delayS * 1000
+      this.clearDelayTimer()
+      if (delay) {
+        const point = event ? {pageX: event.pageX, pageY: event.pageY} : null
+        this.delayTimer = requestAnimationTimeout(() => {
+          this.setPopupVisible(visible, point)
+          this.clearDelayTimer()
+        }, delay)
+      } else {
+        this.setPopupVisible(visible, event)
+      }
+    },
+    clearDelayTimer () {
+      if (this.delayTimer) {
+        cancelAnimationTimeout(this.delayTimer)
+        this.delayTimer = null
+      }
+    },
+    clearOutsideHandler () {
+      if (this.clickOutsideHander) {
+        this.clickOutsideHander.remove()
+        this.clickOutsideHander = null
+      }
+      if (this.contextmenuOutsideHander1) {
+        this.contextmenuOutsideHander1.remove()
+        this.contextmenuOutsideHander1 = null
+      }
+      if (this.contextmenuOutsideHander2) {
+        this.contextmenuOutsideHander2.remove()
+        this.contextmenuOutsideHander2 = null
+      }
+      if (this.touchOutsideHander) {
+        this.touchOutsideHander.remove()
+        this.touchOutsideHander = null
+      }
+    },
+
+    createTwoChains (event) {
+      let fn = () => {}
+      const events = this.$listeners
+      if (this.childOriginEvents[event] && events[event]) {
+        return this[`fire${event}`]
+      }
+      fn = this.childOriginEvents[event] || events[event] || fn
+      return fn
+    },
+
+    isClickToShow () {
+      const {action, showAction} = this.$props
+      return action.indexOf('click') !== -1 || showAction.indexOf('click') !== -1
+    },
+
+    isContextmenuToShow () {
+      const {action, showAction} = this.$props
+      return action.indexOf('contextmenu') !== -1 || showAction.indexOf('contextmenu') !== -1
+    },
+
+    isClickToHide () {
+      const {action, hideAction} = this.$props
+      return action.indexOf('click') !== -1 || hideAction.indexOf('click')
+    },
+
+    isMouseEnterToShow () {
+      const {action, showAction} = this.$props
+      return action.indexOf('hover') !== -1 || showAction.indexOf('hover') !== -1
+    },
+
+    isMouseLeaveToHide () {
+      const {action, hideAction} = this.$props
+      return action.indexOf('hover') !== -1 || hideAction.indexOf('mouveleave') !== -1
+    },
+
+    isFocusToShow () {
+      const {action, showAction} = this.$props
+      return action.indexOf('focus') !== -1 || showAction.indexOf('focus') !== -1
+    },
+
+    isBlurToHide () {
+      const {action, hideAction} = this.$props
+      return action.indexOf('focus') !== -1 || hideAction.indexOf('blur') !== -1
+    },
+
+    focusPopupAlign () {
+      if (this.$data.sPopupVisible && this._component && this._component.$refs.alignInstance) {
+        this._component.$refs.alignInstance.forceAlign()
+      }
+    },
+    filterEvents (type, e) {
+      if (this.childOriginEvents[type]) {
+        this.childOriginEvents[type](e)
+      }
+      this.__emit(type, e);
+    },
+
+    close () {
+      this.setPopupVisible(false)
     }
+  },
+  render () {
+    const {sPopupVisible} = this
+    const children = filterEmpty(this.$slots.default)
+    const {forceRender, alignPoint} = this.$props
+
+    if (children.length > 1) {
+      console.error('Trigger $slots.default.length > 1, just support only one default')
+    }
+    const child = children[0]
+    this.childOriginEvents = getEvents(child)
+    const newChildProps = {
+      props: {},
+      on: {},
+      key: 'trigger'
+    }
+
+    if (this.isContextmenuToShow()) {
+      newChildProps.on.contextmenu = this.onContextmenu
+    } else {
+      newChildProps.on.contextmenu = this.createTwoChains('contextmenu')
+    }
+
+    if (this.isClickToHide () || this.isClickToShow()) {
+      newChildProps.on.click = this.click
+      newChildProps.on.mousedown = this.onMousedown
+      newChildProps.on.touchstart = this.onTouchstart
+    } else {
+      newChildProps.on.click = this.createTwoChains('click')
+      newChildProps.on.mousedown = this.createTwoChains('mousedown')
+      newChildProps.on.touchstart = this.createTwoChains('touchstart')
+    }
+    if (this.isMouseEnterToShow()) {
+      newChildProps.on.mouseenter = this.onMouseenter
+      if (alignPoint) {
+        newChildProps.on.mousemove = this.onMouseMove
+      }
+    } else {
+      newChildProps.on.mounseenter = this.createTwoChains('mouseenter')
+    }
+    if (this.isMouseLeaveToHide()) {
+      newChildProps.on.mouseleave = this.onMouseleave
+    } else {
+      newChildProps.on.mouseleave = this.createTwoChains('mouseleave')
+    }
+
+    if (this.isFocusToShow() || this.isBlurToHide()) {
+      newChildProps.on.focus = this.onFocus
+      newChildProps.on.blur = this.onBlur
+    } else {
+      newChildProps.on.focus = this.createTwoChains('focus')
+      newChildProps.on.blur = e => {
+        if (e && (!e.relatedTarget || !contains(e.target, e.relatedTarget))) {
+          this.createTwoChains('blur')(e)
+        }
+      }
+    }
+    const trigger = cloneElement(child, newChildProps)
+
+    return (
+      <ContainerRender
+        parent= {this}
+        visible={sPopupVisible}
+        autoMount={false}
+        forceRender={forceRender}
+        getComponent={this.getComponent}
+        getContainer={this.getContainer}
+        children={({renderComponent}) => {
+          this.renderComponent = renderComponent
+          return trigger
+        }}
+      />
+    )
   }
 }
 </script>
