@@ -40,10 +40,12 @@ export default {
   },
   name: 'Trigger',
   props: {
+    // 触发类型
     action: {
       type: [String, Array],
       default: () => []
     },
+    // zhan
     showAction: {
       type: null,
       default: () => []
