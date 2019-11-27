@@ -1,13 +1,14 @@
 <!--
  * @Author: Mr Chang
  * @Date: 2019-11-23 11:12:23
- * @LastEditors: Please set LastEditors
+ * @LastEditors: Mr Chang
  * @Description: file content
  -->
 <script>
 import PopupInner from './PopupInner'
 import LazyRenderBox from './LazyRenderBox'
 import Align from './Align'
+import animate from './css-animate'
 
 export default {
   props: {
@@ -271,12 +272,12 @@ export default {
         enter (el, done) {
           if (this.$refs.alignInstance) {
             this.$refs.alignInstance.$nextTick(() => {
-              animation(el, `${transitionName}-enter`, done)
+              animate(el, `${transitionName}-enter`, done)
             })
           }
         },
         leave (el, done) {
-          animation(el, `${transitionName}-leave`, done)
+          animate(el, `${transitionName}-leave`, done)
         }
       }
 

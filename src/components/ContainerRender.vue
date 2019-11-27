@@ -58,6 +58,7 @@ export default {
       }
     },
     renderComponent (props = {}, ready) {
+      console.log(props)
       const { visible, forceRender, getContainer, parent} = this
       const self = this
       if (visible || parent.$refs._component || forceRender) {

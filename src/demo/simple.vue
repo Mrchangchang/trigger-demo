@@ -183,11 +183,11 @@ export default {
           </label>
           <label>
             <a-checkbox
-              value="contextMenu"
-              checked={!!trigger.contextMenu}
+              value="contextmenu"
+              checked={!!trigger.contextmenu}
               onChange={this.onTriggerChange}
             />
-            contextMenu
+            contextmenu
           </label>
           &nbsp;&nbsp;&nbsp;&nbsp;
           <label>

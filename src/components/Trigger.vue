@@ -1,20 +1,21 @@
 <!--
  * @Author: Mr Chang
  * @Date: 2019-11-22 15:45:54
- * @LastEditors: Please set LastEditors
+ * @LastEditors: Mr Chang
  * @Description: file content
  -->
 <script>
+import Vue from 'vue'
 import Popup from './Popup'
 import ContainerRender from './ContainerRender'
 import {hasProp, filterEmpty, getEvents} from './props-util'
 import {contains, getAlignPopupClassName, getAlignFromPlacement, getComponentFromProp, requestAnimationTimeout, cancelAnimationTimeout} from './util'
 import addDOMEventListener from 'add-dom-event-listener'
 import {cloneElement} from './vnode'
+import ref from 'vue-ref'
 
 
-
-
+Vue.use(ref, { name: 'segi-ref' })
 function returnEmptyString() {
   return '';
 }
@@ -640,7 +641,7 @@ export default {
     }
 
     if (this.isClickToHide () || this.isClickToShow()) {
-      newChildProps.on.click = this.click
+      newChildProps.on.click = this.onClick
       newChildProps.on.mousedown = this.onMousedown
       newChildProps.on.touchstart = this.onTouchstart
     } else {
